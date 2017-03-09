@@ -22,8 +22,6 @@ The code makes use of the following data:
 | monthly mean | LWkernel | LW cloud radiative kernel | W/m^2/% | nc |
 | monthly mean | SWkernel | SW cloud radiative kernel | W/m^2/% | nc |
 
-The GCM simulator-oriented ISCCP and MODIS cloud observational benchmarks from which AC_clisccp and AC_clmodis are derived are available on the CFMIP-OBS page http://climserv.ipsl.polytechnique.fr/cfmip-obs/
-
 Two sets of cloud radiative kernels available at https://github.com/mzelinka/cloud-radiative-kernels/tree/master/data
 
 1) cloud_kernels2.nc: The cloud radiative kernels that are appropriate for use with climate model output were developed using zonal mean temperature and humidity profiles averaged across control runs of six CFMIP1 climate models as input to the radiation code. Please refer to Zelinka et al. (2012a,b) for details. 
