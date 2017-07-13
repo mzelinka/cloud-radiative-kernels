@@ -37,6 +37,7 @@ Each feedback is size (MO,TAU,CTP,LAT,LON)=(12,7,7,90,144)
 For the provided sample imput data, the code should print the following output, which is the global annual mean LW and SW cloud feedbacks:
 
 avg LW cloud feedback = 0.81628
+
 avg SW cloud feedback = 0.41439
 
 Figure Generation
