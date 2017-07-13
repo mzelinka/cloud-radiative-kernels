@@ -6,8 +6,9 @@
 % Reference: Zelinka, Mark D., Stephen A. Klein, Dennis L. Hartmann, 2012: Computing and Partitioning Cloud Feedbacks Using 
 % Cloud Property Histograms. Part I: Cloud Radiative Kernels. J. Climate, 25, 3715?3735. doi:10.1175/JCLI-D-11-00248.1.
 
-% This script is written to compute the cloud feedback for 
-% MPI-ESM-LR using the difference between amipFuture and amip runs
+% v2: This script is written to demonstrate how to compute the cloud feedback using for a 
+% short (2-year) period of MPI-ESM-LR using the difference between amipFuture and amip runs.
+% One should difference longer periods for more robust results -- these are just for demonstrative purposes
 
 % Data that are used in this script:
 % 1. model clisccp field
@@ -24,6 +25,7 @@
 % the user must update the path to the relevant netcdf files
 
 % This script written by Mark Zelinka (zelinka1@llnl.gov) on 23 June 2014
+% v2 modifications done on 13 July 2017
 
 %% Load in the cloud radiative kernels
 % Kernels are in units of W/m2/%
@@ -35,21 +37,22 @@ SWkernel = get_netcdf_data(variable,'SWkernel');
 albcs_midpt = get_netcdf_data(variable,'albcs'); % 0, 0.5, 1.0
 kern_lat = get_netcdf_data(variable,'lat');  
 kern_lon=1.25:2.5:360;
+kern_coslat=cos(pi*kern_lat./180);
 
 %% Load model clisccp, rsuscs, rsutcs, tas from amip control run 
-variable='/p/lscratche/zelinka1/cmip5/clisccp/clisccp_cfMon_MPI-ESM-LR_amip_r1i1p1_197901-200812.nc'; % USER: MODIFY THIS LINE 
+variable='/p/lscratche/zelinka1/cmip5/clisccp/clisccp_cfMon_MPI-ESM-LR_amip_r1i1p1_197901-198112.nc'; % USER: MODIFY THIS LINE 
 ctl_clisccp = get_netcdf_data(variable,'clisccp'); % size (time,tau,CTP,lat,lon); units: percent
 ctl_clisccp(ctl_clisccp>500)=NaN; 
 
-variable='/p/lscratche/zelinka1/cmip5/tas/tas_Amon_MPI-ESM-LR_amip_r1i1p1_197901-200812.nc'; % USER: MODIFY THIS LINE 
+variable='/p/lscratche/zelinka1/cmip5/tas/tas_Amon_MPI-ESM-LR_amip_r1i1p1_197901-198112.nc'; % USER: MODIFY THIS LINE 
 ctl_tas = get_netcdf_data(variable,'tas'); % size (time,lat,lon)
 ctl_tas(ctl_tas>500)=NaN; 
 
-variable='/p/lscratche/zelinka1/cmip5/rsdscs/rsdscs_Amon_MPI-ESM-LR_amip_r1i1p1_197901-200812.nc'; % USER: MODIFY THIS LINE 
+variable='/p/lscratche/zelinka1/cmip5/rsdscs/rsdscs_Amon_MPI-ESM-LR_amip_r1i1p1_197901-198112.nc'; % USER: MODIFY THIS LINE 
 ctl_rsdscs = get_netcdf_data(variable,'rsdscs'); % size (time,lat,lon)
 ctl_rsdscs(ctl_rsdscs>500)=NaN; 
 
-variable='/p/lscratche/zelinka1/cmip5/rsuscs/rsuscs_Amon_MPI-ESM-LR_amip_r1i1p1_197901-200812.nc'; % USER: MODIFY THIS LINE 
+variable='/p/lscratche/zelinka1/cmip5/rsuscs/rsuscs_Amon_MPI-ESM-LR_amip_r1i1p1_197901-198112.nc'; % USER: MODIFY THIS LINE 
 ctl_rsuscs = get_netcdf_data(variable,'rsuscs'); % size (time,lat,lon)
 ctl_rsuscs(ctl_rsuscs>500)=NaN; 
 
@@ -62,11 +65,11 @@ ctl_albcs=ctl_rsuscs./ctl_rsdscs;
 clear ctl_rsuscs ctl_rsdscs
 
 %% Load model clisccp and tas from amipFuture run 
-variable='/p/lscratche/zelinka1/cmip5/clisccp/clisccp_cfMon_MPI-ESM-LR_amipFuture_r1i1p1_197901-200812.nc'; % USER: MODIFY THIS LINE 
+variable='/p/lscratche/zelinka1/cmip5/clisccp/clisccp_cfMon_MPI-ESM-LR_amipFuture_r1i1p1_197901-198112.nc'; % USER: MODIFY THIS LINE 
 fut_clisccp = get_netcdf_data(variable,'clisccp'); % size (time,tau,CTP,lat,lon); units: percent
 fut_clisccp(fut_clisccp>500)=NaN; 
 
-variable='/p/lscratche/zelinka1/cmip5/tas/tas_Amon_MPI-ESM-LR_amipFuture_r1i1p1_197901-200812.nc'; % USER: MODIFY THIS LINE 
+variable='/p/lscratche/zelinka1/cmip5/tas/tas_Amon_MPI-ESM-LR_amipFuture_r1i1p1_197901-198112.nc'; % USER: MODIFY THIS LINE 
 fut_tas = get_netcdf_data(variable,'tas'); % size (time,lat,lon)
 fut_tas(fut_tas>500)=NaN; 
 
@@ -141,3 +144,12 @@ LW_cld_fdbk=anom_clisccp_int.*LWkernel_map/avgdtas;
 
 % ensure that SW_cld_fdbk is zero rather than NaN if the SW kernel is zero (e.g., in the polar night)
 SW_cld_fdbk(SWkernel_map==0)=0;
+
+%% Quick sanity check:
+% print the global, annual mean LW and SW cloud feedbacks:
+sumLW = squeeze(nanmean(nanmean(nansum(nansum(LW_cld_fdbk,2),3),1),5));
+avgLW_cld_fbk = count_wt_mean(sumLW,kern_coslat,1);
+display(['avg LW cloud feedback = ',num2str(avgLW_cld_fbk)])
+sumSW = squeeze(nanmean(nanmean(nansum(nansum(SW_cld_fdbk,2),3),1),5));
+avgSW_cld_fbk = count_wt_mean(sumSW,kern_coslat,1);
+display(['avg SW cloud feedback = ',num2str(avgSW_cld_fbk)])
