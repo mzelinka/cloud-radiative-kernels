@@ -34,11 +34,12 @@ SW and LW cloud feedbacks.
 
 Each feedback is size (MO,TAU,CTP,LAT,LON)=(12,7,7,90,144)
 
-For the provided sample imput data, the code should print the following output, which is the global annual mean LW and SW cloud feedbacks:
+For the provided sample imput data, the code should print the following output, which is the global annual mean LW and SW cloud feedbacks. The values are slightly different in the Matlab and Python versions, possibly due to differences in regridding and in area-weighted averaging.
 
-avg LW cloud feedback = 0.81628
-
-avg SW cloud feedback = 0.41439
+| Average Cloud Feedback Component | Matlab | Python |
+|:---------------------------------|:-------|:-------|
+| LW | 0.816 | 0.832 |
+| SW | 0.414 | 0.402 |
 
 Figure Generation
 ----------
