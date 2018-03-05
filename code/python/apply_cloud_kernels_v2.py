@@ -99,6 +99,9 @@ LWkernel=f('LWkernel')
 SWkernel=f('SWkernel')
 f.close()
 
+LWkernel=MV.masked_where(np.isnan(LWkernel),LWkernel)
+SWkernel=MV.masked_where(np.isnan(SWkernel),SWkernel)
+
 albcs=np.arange(0.0,1.5,0.5) # the clear-sky albedos over which the kernel is computed
 
 # LW kernel does not depend on albcs, just repeat the final dimension over longitudes:
