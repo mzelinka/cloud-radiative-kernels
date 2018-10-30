@@ -210,57 +210,53 @@ avgSW_cld_fbk = cdutil.averager(sumSW, axis='xy', weights='weighted')
 print 'avg SW cloud feedback = '+str(avgSW_cld_fbk)
 
 # Some sample global mean figures
+fig=pl.figure(figsize=(18,12)) # this creates and increases the figure size
+pl.suptitle('Global and annual mean histograms',fontsize=16,y=0.95)
 tau=[0.,0.3,1.3,3.6,9.4,23.,60.,380.]
 ctp=[1000,800,680,560,440,310,180,50]
 
 # amip cloud fraction histogram:
-pl.subplots()
+pl.subplot(221)
 data = cdutil.averager(MV.average(avgclisccp1_grd,axis=0), axis='xy', weights='weighted').transpose()
 pl.pcolor(data,shading='flat',cmap='Blues_r',vmin=0, vmax=10)
 pl.xticks(np.arange(8), tau)
 pl.yticks(np.arange(8), ctp)
-pl.title('Global mean amip cloud fraction')
+pl.title('AMIP cloud fraction')
 pl.xlabel('TAU')
 pl.ylabel('CTP')
-pl.colorbar()
-
-# amipFuture cloud fraction histogram:
-pl.subplots()
-data = cdutil.averager(MV.average(avgclisccp2_grd,axis=0), axis='xy', weights='weighted').transpose()
-pl.pcolor(data,shading='flat',cmap='Blues_r',vmin=0, vmax=10)
-pl.xticks(np.arange(8), tau)
-pl.yticks(np.arange(8), ctp)
-pl.title('Global mean amipFuture cloud fraction')
-pl.xlabel('TAU')
-pl.ylabel('CTP')
-pl.colorbar()
+cb=pl.colorbar()
+cb.set_label('%')
 
 # difference of cloud fraction histograms:
-pl.subplots()
+pl.subplot(222)
 data = cdutil.averager(MV.average(anomclisccp,axis=0), axis='xy', weights='weighted').transpose()
 pl.pcolor(data,shading='flat',cmap='RdBu_r',vmin=-0.75, vmax=0.75)
 pl.xticks(np.arange(8), tau)
 pl.yticks(np.arange(8), ctp)
-pl.title('Global mean normalized change in cloud fraction')
-pl.colorbar()
+pl.title('Normalized change in cloud fraction')
+cb=pl.colorbar()
+cb.set_label('%/K')
 
 # LW cloud feedback contributions:
-pl.subplots()
+pl.subplot(223)
 data = cdutil.averager(MV.average(LW_cld_fbk,axis=0), axis='xy', weights='weighted').transpose()
 pl.pcolor(data,shading='flat',cmap='RdBu_r',vmin=-0.75, vmax=0.75)
 pl.xticks(np.arange(8), tau)
 pl.yticks(np.arange(8), ctp)
-pl.title('Global mean LW cloud feedback contributions')
-pl.colorbar()
+pl.title('LW cloud feedback contributions')
+cb=pl.colorbar()
+cb.set_label('W/m$^2$/K')
 
 # SW cloud feedback contributions:
-pl.subplots()
+pl.subplot(224)
 data = cdutil.averager(MV.average(SW_cld_fbk,axis=0), axis='xy', weights='weighted').transpose()
 pl.pcolor(data,shading='flat',cmap='RdBu_r',vmin=-0.75, vmax=0.75)
 pl.xticks(np.arange(8), tau)
 pl.yticks(np.arange(8), ctp)
-pl.title('Global mean SW cloud feedback contributions')
-pl.colorbar()
+pl.title('SW cloud feedback contributions')
+cb=pl.colorbar()
+cb.set_label('W/m$^2$/K')
+pl.savefig('/work/zelinka1/figures/cloud_kernel_example_hists.png', bbox_inches='tight')
 
 
 # Plot Maps
@@ -280,7 +276,7 @@ m.drawmapboundary(fill_color='0.3')
 im1 = m.contourf(LON,LAT,sumLW,bounds,shading='flat',cmap=cmap,norm=norm,latlon=True,extend='both')
 m.drawcoastlines(linewidth=1.5)
 cb = pl.colorbar(im1,orientation='vertical',drawedges=True,ticks=bounds)
-pl.title('LW Cloud Feedback',fontsize=14)
+pl.title('LW Cloud Feedback ['+str(np.round(avgLW_cld_fbk,3))+']',fontsize=14)
 cb.set_label('W/m$^2$/K')
 
 pl.subplot(2,1,2)
@@ -289,7 +285,7 @@ m.drawmapboundary(fill_color='0.3')
 im1 = m.contourf(LON,LAT,sumSW,bounds,shading='flat',cmap=cmap,norm=norm,latlon=True,extend='both')
 m.drawcoastlines(linewidth=1.5)
 cb = pl.colorbar(im1,orientation='vertical',drawedges=True,ticks=bounds)
-pl.title('SW Cloud Feedback',fontsize=14)
+pl.title('SW Cloud Feedback ['+str(np.round(avgSW_cld_fbk,3))+']',fontsize=14)
 cb.set_label('W/m$^2$/K')
 pl.savefig('/work/zelinka1/figures/cloud_kernel_example_maps.png', bbox_inches='tight')
 
