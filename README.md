@@ -1,5 +1,5 @@
 # cloud-radiative-kernels
-There are python, matlab, and ncl scripts provided that demonstrate how to use cloud radiative kernels to compute cloud-induced radiation anomalies and cloud feedback.  In addition, a python script is provided that demonstrates how to partition the cloud feedbacks in to components due to changes in cloud amount, altitude, optical depth, and a residual, for all clouds, non-low clouds, and low clouds. 
+Python, matlab, and ncl scripts are provided that demonstrate how to use cloud radiative kernels to compute cloud-induced radiation anomalies and cloud feedback.  In addition, a python script is provided that demonstrates how to partition the cloud feedbacks in to components due to changes in cloud amount, altitude, optical depth, and a residual, for all clouds, non-low clouds, and low clouds. 
 
 References
 ----------
