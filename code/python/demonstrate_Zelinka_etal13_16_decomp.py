@@ -319,34 +319,12 @@ for sec in sections:
     SWcld_err[night]=0
 
     # Sanity check: print global and annual mean cloud feedback components
-    AX=avgalbcs1_grd.getAxisList()
-    LWcld_tot.setAxisList(AX)
-    LWcld_amt.setAxisList(AX)
-    LWcld_alt.setAxisList(AX)
-    LWcld_tau.setAxisList(AX)
-    LWcld_err.setAxisList(AX)
-    print('avg '+sec+' LWcld_tot: '+str(cdutil.averager(MV.average(LWcld_tot,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' LWcld_amt: '+str(cdutil.averager(MV.average(LWcld_amt,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' LWcld_alt: '+str(cdutil.averager(MV.average(LWcld_alt,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' LWcld_tau: '+str(cdutil.averager(MV.average(LWcld_tau,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' LWcld_err: '+str(cdutil.averager(MV.average(LWcld_err,axis=0), axis='xy', weights='weighted')))
-    SWcld_tot.setAxisList(AX)
-    SWcld_amt.setAxisList(AX)
-    SWcld_alt.setAxisList(AX)
-    SWcld_tau.setAxisList(AX)
-    SWcld_err.setAxisList(AX)
-    print('avg '+sec+' SWcld_tot: '+str(cdutil.averager(MV.average(SWcld_tot,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' SWcld_amt: '+str(cdutil.averager(MV.average(SWcld_amt,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' SWcld_alt: '+str(cdutil.averager(MV.average(SWcld_alt,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' SWcld_tau: '+str(cdutil.averager(MV.average(SWcld_tau,axis=0), axis='xy', weights='weighted')))
-    print('avg '+sec+' SWcld_err: '+str(cdutil.averager(MV.average(SWcld_err,axis=0), axis='xy', weights='weighted')))
-       
-       
+    AX=avgalbcs1_grd[0,:].getAxisList()         
        
     # Plot Maps
     from mpl_toolkits.basemap import Basemap
-    lons=LWcld_tot.getLongitude()[:]
-    lats=LWcld_tot.getLatitude()[:]
+    lons=avgalbcs1_grd.getLongitude()[:]
+    lats=avgalbcs1_grd.getLatitude()[:]
     LON, LAT = np.meshgrid(lons,lats)
 
     # LW
@@ -364,8 +342,10 @@ for sec in sections:
         exec('DATA = MV.average('+name+',0)')
         im1 = m.contourf(LON,LAT,DATA,bounds,shading='flat',cmap=cmap,norm=norm,latlon=True,extend='both')
         m.drawcoastlines(linewidth=1.5)
+        DATA.setAxisList(AX)
+        avgDATA = cdutil.averager(DATA, axis='xy', weights='weighted')
+        pl.title(name+' ['+str(np.round(avgDATA,3))+']',fontsize=14)
         cb = pl.colorbar(im1,orientation='vertical',drawedges=True,ticks=bounds)
-        pl.title(name,fontsize=14)
         cb.set_label('W/m$^2$/K')    
     pl.savefig('/work/zelinka1/figures/LW_'+sec+'_cld_fbk_example_maps.png', bbox_inches='tight')
 
@@ -385,8 +365,10 @@ for sec in sections:
         exec('DATA = MV.average('+name+',0)')
         im1 = m.contourf(LON,LAT,DATA,bounds,shading='flat',cmap=cmap,norm=norm,latlon=True,extend='both')
         m.drawcoastlines(linewidth=1.5)
+        DATA.setAxisList(AX)
+        avgDATA = cdutil.averager(DATA, axis='xy', weights='weighted')
+        pl.title(name+' ['+str(np.round(avgDATA,3))+']',fontsize=14)
         cb = pl.colorbar(im1,orientation='vertical',drawedges=True,ticks=bounds)
-        pl.title(name,fontsize=14)
         cb.set_label('W/m$^2$/K')    
     pl.savefig('/work/zelinka1/figures/SW_'+sec+'_cld_fbk_example_maps.png', bbox_inches='tight')
 
