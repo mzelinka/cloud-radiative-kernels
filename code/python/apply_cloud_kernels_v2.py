@@ -1,19 +1,19 @@
 #!/usr/bin/env cdat
 """
-% Cloud Property Histograms. Part I: Cloud Radiative Kernels. J. Climate, 25, 3715?3735. doi:10.1175/JCLI-D-11-00248.1.
+# Cloud Property Histograms. Part I: Cloud Radiative Kernels. J. Climate, 25, 3715-3735. doi:10.1175/JCLI-D-11-00248.1.
 
-% v2: This script is written to demonstrate how to compute the cloud feedback using for a 
-% short (2-year) period of MPI-ESM-LR using the difference between amipFuture and amip runs.
-% One should difference longer periods for more robust results -- these are just for demonstrative purposes
+# v2: This script is written to demonstrate how to compute the cloud feedback using for a 
+# short (2-year) period of MPI-ESM-LR using the difference between amipFuture and amip runs.
+# One should difference longer periods for more robust results -- these are just for demonstrative purposes
 
-% Data that are used in this script:
-% 1. model clisccp field
-% 2. model rsuscs field
-% 3. model rsdscs field
-% 4. model tas field
-% 5. cloud radiative kernels
+# Data that are used in this script:
+# 1. model clisccp field
+# 2. model rsuscs field
+# 3. model rsdscs field
+# 4. model tas field
+# 5. cloud radiative kernels
 
-% This script written by Mark Zelinka (zelinka1@llnl.gov) on 14 July 2017
+# This script written by Mark Zelinka (zelinka1@llnl.gov) on 14 July 2017
 
 """
 
@@ -24,6 +24,7 @@ import cdutil
 import MV2 as MV
 import numpy as np
 import pylab as pl
+import matplotlib as mpl
 
 ###########################################################################
 # HELPFUL FUNCTIONS FOLLOW 
@@ -260,4 +261,37 @@ pl.xticks(np.arange(8), tau)
 pl.yticks(np.arange(8), ctp)
 pl.title('Global mean SW cloud feedback contributions')
 pl.colorbar()
+
+
+# Plot Maps
+from mpl_toolkits.basemap import Basemap
+lons=sumLW.getLongitude()[:]
+lats=sumLW.getLatitude()[:]
+LON, LAT = np.meshgrid(lons,lats)
+
+fig=pl.figure(figsize=(18,12)) # this creates and increases the figure size
+bounds = np.arange(-18,20,2)
+cmap = pl.cm.RdBu_r
+bounds2 = np.append(np.append(-500,bounds),500) # This is only needed for norm if colorbar is extended
+norm = mpl.colors.BoundaryNorm(bounds2, cmap.N) # this is the critical line for making sure the colors vary linearly even if the desired color boundaries are at varied intervals
+pl.subplot(2,1,1)
+m = Basemap(projection='robin',lon_0=210)#'hammer',lon_0=180)
+m.drawmapboundary(fill_color='0.3')
+im1 = m.contourf(LON,LAT,sumLW,bounds,shading='flat',cmap=cmap,norm=norm,latlon=True,extend='both')
+m.drawcoastlines(linewidth=1.5)
+cb = pl.colorbar(im1,orientation='vertical',drawedges=True,ticks=bounds)
+pl.title('LW Cloud Feedback',fontsize=14)
+cb.set_label('W/m$^2$/K')
+
+pl.subplot(2,1,2)
+m = Basemap(projection='robin',lon_0=210)#'hammer',lon_0=180)
+m.drawmapboundary(fill_color='0.3')
+im1 = m.contourf(LON,LAT,sumSW,bounds,shading='flat',cmap=cmap,norm=norm,latlon=True,extend='both')
+m.drawcoastlines(linewidth=1.5)
+cb = pl.colorbar(im1,orientation='vertical',drawedges=True,ticks=bounds)
+pl.title('SW Cloud Feedback',fontsize=14)
+cb.set_label('W/m$^2$/K')
+pl.savefig('/work/zelinka1/figures/cloud_kernel_example_maps.png', bbox_inches='tight')
+
+
 pl.show()
