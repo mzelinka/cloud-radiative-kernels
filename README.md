@@ -43,4 +43,4 @@ For the provided sample imput data, the code should print the following output, 
 
 Figure Generation
 ----------
-Is a script to draw a figure in the paper included? No
+Is a script to draw a figure in the paper included? Yes
