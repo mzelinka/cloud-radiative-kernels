@@ -5,21 +5,21 @@ References
 ----------
 Zelinka, M. D., S. A. Klein, and D. L. Hartmann, 2012: Computing and Partitioning Cloud Feedbacks Using 
     Cloud Property Histograms. Part I: Cloud Radiative Kernels. J. Climate, 25, 3715-3735. 
-    doi:10.1175/JCLI-D-11-00248.1.
+    [doi:10.1175/JCLI-D-11-00248.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-11-00248.1).
 
 Zelinka, M. D., S. A. Klein, and D. L. Hartmann, 2012: Computing and Partitioning Cloud Feedbacks Using 
     Cloud Property Histograms. Part II: Attribution to Changes in Cloud Amount, Altitude, and Optical Depth. 
-    J. Climate, 25, 3736-3754. doi:10.1175/JCLI-D-11-00249.1.
+    J. Climate, 25, 3736-3754. [doi:10.1175/JCLI-D-11-00249.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-11-00249.1).
 
 Zelinka, M.D., S.A. Klein, K.E. Taylor, T. Andrews, M.J. Webb, J.M. Gregory, and P.M. Forster, 2013: 
     Contributions of Different Cloud Types to Feedbacks and Rapid Adjustments in CMIP5. 
-    J. Climate, 26, 5007-5027. doi: 10.1175/JCLI-D-12-00555.1.
+    J. Climate, 26, 5007-5027. [doi:10.1175/JCLI-D-12-00555.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-12-00555.1).
     
 Zelinka, M. D., C. Zhou, and S. A. Klein, 2016: Insights from a Refined Decomposition of Cloud Feedbacks, 
-    Geophys. Res. Lett., 43, 9259-9269, doi:10.1002/2016GL069917.
+    Geophys. Res. Lett., 43, 9259-9269, [doi:10.1002/2016GL069917](http://onlinelibrary.wiley.com/doi/10.1002/2016GL069917/full).
     
 Zhou, C., M. D. Zelinka, A. E. Dessler, P. Yang, 2013: An analysis of the short-term cloud feedback using 
-    MODIS data, J. Climate, 26, 4803–4815. doi: 10.1175/JCLI-D-12-00547.1.
+    MODIS data, J. Climate, 26, 4803–4815. [doi:10.1175/JCLI-D-12-00547.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-12-00547.1).
 
 
 Input
@@ -57,4 +57,4 @@ For the provided sample imput data, the code should print the following output, 
 
 Figure Generation
 ----------
-Is a script to draw a figure in the paper included? Yes
+Is a script to draw a figure in the paper included? Yes, see the [images directory](https://github.com/mzelinka/cloud-radiative-kernels/tree/master/images).
