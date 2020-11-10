@@ -38,9 +38,9 @@ The code makes use of the following data:
 
 Two sets of cloud radiative kernels available at https://github.com/mzelinka/cloud-radiative-kernels/tree/master/data
 
-1) cloud_kernels2.nc: The cloud radiative kernels that are appropriate for use with climate model output were developed using zonal mean temperature and humidity profiles averaged across control runs of six CFMIP1 climate models as input to the radiation code. Please refer to Zelinka et al. (2012a,b) for details. 
+1) cloud_kernels2.nc: The cloud radiative kernels developed using zonal mean temperature and humidity profiles averaged across control runs of six CFMIP1 climate models as input to the radiation code. These are best for diagnosing feedbacks relative to a modeled pre-industrial climate state. Please refer to Zelinka et al. (2012a,b) for details.
 
-2) obs_cloud_kernels3.nc: The cloud radiative kernels that are appropriate for use with observations were developed using zonal mean temperature, humidity, and ozone profiles from ERA Interim over the period 2000-2010 as input to the radiation code. Please refer to Zhou et al. (2013) for details.
+2) obs_cloud_kernels3.nc: The cloud radiative kernels developed using zonal mean temperature, humidity, and ozone profiles from ERA Interim over the period 2000-2010 as input to the radiation code. These are best for diagnosing feedbacks relative to an observed present-day climate state. Please refer to Zhou et al. (2013) for details.
 
 Output
 ----------
