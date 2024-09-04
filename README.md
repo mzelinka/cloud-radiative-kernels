@@ -1,6 +1,6 @@
 # cloud-radiative-kernels
 
-[![DOI](https://zenodo.org/badge/61649471.svg)](https://zenodo.org/badge/latestdoi/61649471)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13686878.svg)](https://doi.org/10.5281/zenodo.13686878)
 
 Cloud radiative kernels are provided, along with a Jupyter notebook that demonstrates how to use them to compute cloud feedbacks.  The notebook additionally demonstrates how to break the feedback down into cloud amount, altitude, optical depth, and residual components for all clouds, non-low clouds, and low clouds. The notebook also demonstrates how to account for changing obscuration effects.
 
