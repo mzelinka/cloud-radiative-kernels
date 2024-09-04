@@ -582,7 +582,7 @@ def CloudRadKernel(filepath,rapidAdj = False):
         ctl_clisccp, fut_clisccp, LWK[:, :, PP, :], SWK[:, :, PP, :], dTs
     )
 
-    # return (output,obsc_output)
+    return (output,obsc_output)
     
-    # for Mark's local purposes:
-    return (output,obsc_output,clisccp_fbk, clisccp_base) 
+    # # for Mark's local purposes:
+    # return (output,obsc_output,clisccp_fbk, clisccp_base) 
