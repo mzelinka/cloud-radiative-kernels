@@ -8,6 +8,7 @@
 # =============================================
 
 # IMPORT STUFF:
+import glob
 import cftime
 import xarray as xr
 import xcdat as xc
@@ -29,27 +30,62 @@ sec_dic = dict(zip(sections, Psections))
 # Define the grid
 LAT = np.arange(-89,91,2.0)
 LON = np.arange(1.25,360,2.5)
-output_grid = xc.regridder.grid.create_grid(lat=LAT, lon=LON)
+# output_grid = xc.regridder.grid.create_grid(lat=LAT, lon=LON)
+lat_axis = xc.create_axis("lat", LAT)
+lon_axis = xc.create_axis("lon", LON)
+output_grid = xc.create_grid(x=lon_axis, y=lat_axis)
 
 ###########################################################################
-def get_amip_data(filename, var, lev=None):
+def get_amip_data(filepath,exp,var, lev=None):
     # load in cmip data using the appropriate function for the experiment/mip
     print('  '+var)#, end=",")
 
-    tslice = slice(
-        "1983-01-01", "2008-12-31"
-    )  # we only want this portion of the amip run (overlap with all AMIPs and ISCCP)
+    filename = filepath[exp]
+    if 'amip' in exp:
+        tslice = slice("1983-01", "2008-12")  # we only want this portion of the amip run (overlap with all AMIPs and ISCCP)
+    elif 'piClim' in exp: # for the piClim-4xCO2 or sstClim4xCO2 exps:
+        tslice = slice(None,None)
+    elif 'sstClim' in exp:
+        tslice = slice(None,None)
 
-    f = xc.open_mfdataset(
-        filename[var], chunks={"lat": -1, "lon": -1, "time": -1}
-    ).load()
+    if var=='clisccp' and 'GISS-E2-1-G' in filename[var] and 'amip' in filename[var]:
+        print('Dealing with the bad clisccp metadata in GISS-E2-1-G')
+        # Load in tas data with correct metadata from same exp:
+        tas = xc.open_mfdataset(filename['tas'])
+        # Manually load in each month's clisccp field, then concatenate
+        gg=glob.glob(filename['clisccp']+'*nc')
+        gg.sort()
+        ds0 = []    
+        for g in gg:
+            ds0.append(xc.open_dataset(g))
+        ds=xr.concat(ds0, 'time')
+        # Give it the correct time stamps from the tas field above
+        f = ds.assign_coords(time=tas.sel(time=slice('1979-01','2014-12')).time)
+        
+    else:
+        f = xc.open_mfdataset(filename[var], chunks={"lat": -1, "lon": -1, "time": -1}).load()
+    
+    
     if lev:
         f = f.sel(time=tslice, plev=lev)
         f = f.drop_vars(["plev", "plev_bnds"])
     else:
         f = f.sel(time=tslice)
 
+    if 'plev7' in f.coords: # CNRM-CM6-1
+        f = f.rename({'plev7':'plev'})
+    if 'pressure2' in f.coords: # IPSL
+        f = f.rename({'pressure2':'plev'})
+        
+    # prevent xarray from thinking tau is the Z axis
+    try:
+        if 'tau' in f.coords:
+            del f.tau.attrs['positive'] 
+    except:
+        pass
+    
     # Compute climatological monthly means
+    f=f.bounds.add_missing_bounds()
     avg = f.temporal.climatology(var, freq="month", weighted=True)
     # Regrid to cloud kernel grid
     output = avg.regridder.horizontal(
@@ -62,23 +98,26 @@ def get_amip_data(filename, var, lev=None):
 ###########################################################################
 def get_model_data(filepath):
     # Read in data, regrid
+    
+    # input filepath is a dictionary containing paths to the data, filepath[exp][var] 
 
     # Load in regridded monthly mean climatologies from control and perturbed simulation
     variables = ["tas", "rsdscs", "rsuscs", "clisccp"]
-    print("amip")
-    exp = "amip"
+    exps = list(filepath.keys())
+    exp = exps[0]
+    print(exp)    
     ctl = []
     for var in variables:
-        ctl.append(get_amip_data(filepath[exp], var))
+        ctl.append(get_amip_data(filepath,exp,var))
     ctl = xr.merge(ctl)
 
-    print("amip-p4K")
-    exp = "amip-p4K"
+    exp = exps[1]
+    print(exp)
     fut = []
     for var in variables:
-        fut.append(get_amip_data(filepath[exp], var))
+        fut.append(get_amip_data(filepath,exp,var))
     fut = xr.merge(fut)
-
+    
     # set tau,plev to consistent field
     ctl["clisccp"] = ctl["clisccp"].transpose("time", "tau", "plev", "lat", "lon")
     fut["clisccp"] = fut["clisccp"].transpose("time", "tau", "plev", "lat", "lon")
@@ -320,63 +359,6 @@ def do_obscuration_calcs(CTL, FUT, Klw, Ksw, DT):
 
     return obsc_output
 
-
-###########################################################################
-def obscuration_feedback_terms_general(
-    L_R_bar0, dobsc_fbk, dunobsc_fbk, dobsc_cov_fbk, Klw, Ksw
-):
-    """
-    Estimate unobscured low cloud feedback,
-    the low cloud feedback arising solely from changes in obscuration by upper-level clouds,
-    and the covariance term
-
-    This function takes in a (month,tau,CTP,lat,lon) matrix
-
-    Klw and Ksw contain just the low bins
-
-    the following terms are generated in obscuration_terms():
-    dobsc = L_R_bar0 * F_prime
-    dunobsc = L_R_prime * F_bar
-    dobsc_cov = (L_R_prime * F_prime) - climo(L_R_prime * F_prime)
-    """
-
-    Klw_low = Klw
-    Ksw_low = Ksw
-    L_R_bar0 = 100 * L_R_bar0
-    dobsc_fbk = 100 * dobsc_fbk
-    dunobsc_fbk = 100 * dunobsc_fbk
-    dobsc_cov_fbk = 100 * dobsc_cov_fbk
-
-    LWdobsc_fbk = (Klw_low * dobsc_fbk).sum(dim=["tau", "plev"])
-    LWdunobsc_fbk = (Klw_low * dunobsc_fbk).sum(dim=["tau", "plev"])
-    LWdobsc_cov_fbk = (Klw_low * dobsc_cov_fbk).sum(dim=["tau", "plev"])
-
-    SWdobsc_fbk = (Ksw_low * dobsc_fbk).sum(dim=["tau", "plev"])
-    SWdunobsc_fbk = (Ksw_low * dunobsc_fbk).sum(dim=["tau", "plev"])
-    SWdobsc_cov_fbk = (Ksw_low * dobsc_cov_fbk).sum(dim=["tau", "plev"])
-
-    ###########################################################################
-    # Further break down the true and apparent low cloud-induced radiation anomalies into components
-    ###########################################################################
-    # No need to break down dobsc_fbk, as that is purely an amount component.
-
-    # Break down dunobsc_fbk:
-    C_ctl = L_R_bar0
-    dC = dunobsc_fbk
-    C_fut = C_ctl + dC
-
-    obsc_fbk_output = KT_decomposition_general(C_ctl, C_fut, Klw_low, Ksw_low)
-
-    obsc_fbk_output["LWdobsc_fbk"] = LWdobsc_fbk
-    obsc_fbk_output["LWdunobsc_fbk"] = LWdunobsc_fbk
-    obsc_fbk_output["LWdobsc_cov_fbk"] = LWdobsc_cov_fbk
-    obsc_fbk_output["SWdobsc_fbk"] = SWdobsc_fbk
-    obsc_fbk_output["SWdunobsc_fbk"] = SWdunobsc_fbk
-    obsc_fbk_output["SWdobsc_cov_fbk"] = SWdobsc_cov_fbk
-
-    return obsc_fbk_output
-
-
 ###########################################################################
 def obscuration_terms3(c1, c2):
     """
@@ -466,6 +448,61 @@ def obscuration_terms3(c1, c2):
 
 
 ###########################################################################
+def obscuration_feedback_terms_general(
+    L_R_bar0, dobsc_fbk, dunobsc_fbk, dobsc_cov_fbk, Klw, Ksw
+):
+    """
+    Estimate unobscured low cloud feedback,
+    the low cloud feedback arising solely from changes in obscuration by upper-level clouds,
+    and the covariance term
+
+    This function takes in a (month,tau,CTP,lat,lon) matrix
+
+    Klw and Ksw contain just the low bins
+
+    the following terms are generated in obscuration_terms():
+    dobsc = L_R_bar0 * F_prime
+    dunobsc = L_R_prime * F_bar
+    dobsc_cov = (L_R_prime * F_prime) - climo(L_R_prime * F_prime)
+    """
+
+    Klw_low = Klw
+    Ksw_low = Ksw
+    L_R_bar0 = 100 * L_R_bar0
+    dobsc_fbk = 100 * dobsc_fbk
+    dunobsc_fbk = 100 * dunobsc_fbk
+    dobsc_cov_fbk = 100 * dobsc_cov_fbk
+
+    LWdobsc_fbk = (Klw_low * dobsc_fbk).sum(dim=["tau", "plev"])
+    LWdunobsc_fbk = (Klw_low * dunobsc_fbk).sum(dim=["tau", "plev"])
+    LWdobsc_cov_fbk = (Klw_low * dobsc_cov_fbk).sum(dim=["tau", "plev"])
+
+    SWdobsc_fbk = (Ksw_low * dobsc_fbk).sum(dim=["tau", "plev"])
+    SWdunobsc_fbk = (Ksw_low * dunobsc_fbk).sum(dim=["tau", "plev"])
+    SWdobsc_cov_fbk = (Ksw_low * dobsc_cov_fbk).sum(dim=["tau", "plev"])
+
+    ###########################################################################
+    # Further break down the true and apparent low cloud-induced radiation anomalies into components
+    ###########################################################################
+    # No need to break down dobsc_fbk, as that is purely an amount component.
+
+    # Break down dunobsc_fbk:
+    C_ctl = L_R_bar0
+    dC = dunobsc_fbk
+    C_fut = C_ctl + dC
+
+    obsc_fbk_output = KT_decomposition_general(C_ctl, C_fut, Klw_low, Ksw_low)
+
+    obsc_fbk_output["LWdobsc_fbk"] = LWdobsc_fbk
+    obsc_fbk_output["LWdunobsc_fbk"] = LWdunobsc_fbk
+    obsc_fbk_output["LWdobsc_cov_fbk"] = LWdobsc_cov_fbk
+    obsc_fbk_output["SWdobsc_fbk"] = SWdobsc_fbk
+    obsc_fbk_output["SWdunobsc_fbk"] = SWdunobsc_fbk
+    obsc_fbk_output["SWdobsc_cov_fbk"] = SWdobsc_cov_fbk
+
+    return obsc_fbk_output
+
+###########################################################################
 def xc_to_dataset(idata):
     idata = idata.to_dataset(name="data")
     if "height" in idata.coords:
@@ -508,7 +545,7 @@ def tile_uneven(data, data_to_match):
     return rep_data
 
 ###########################################################################
-def CloudRadKernel(filepath):
+def CloudRadKernel(filepath,rapidAdj = False):
     (
         ctl_clisccp,
         fut_clisccp,
@@ -517,11 +554,15 @@ def CloudRadKernel(filepath):
         dTs
     ) = get_CRK_data(filepath)
 
+    if rapidAdj: # if doing rapid adjustments instead of feedbacks, do not normalize by ∆T
+        dTs = 1
+
     ###########################################################################
     # Compute cloud feedbacks and their breakdown into components
     ###########################################################################
     print("Compute feedbacks")
     clisccp_fbk, clisccp_base = compute_fbk(ctl_clisccp, fut_clisccp, dTs)
+    
     # The following performs the amount/altitude/optical depth decomposition of
     # Zelinka et al., J Climate (2012b), as modified in Zelinka et al., J. Climate (2013)
     output = {}
@@ -548,4 +589,7 @@ def CloudRadKernel(filepath):
         ctl_clisccp, fut_clisccp, LWK[:, :, PP, :], SWK[:, :, PP, :], dTs
     )
 
-    return (output,obsc_output)
+    # return (output,obsc_output)
+    
+    # for Mark's local purposes:
+    return (output,obsc_output,clisccp_fbk, clisccp_base) 
