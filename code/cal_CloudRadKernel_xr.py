@@ -31,7 +31,6 @@ sec_dic = dict(zip(sections, Psections))
 # Define the grid
 LAT = np.arange(-89,91,2.0)
 LON = np.arange(1.25,360,2.5)
-# output_grid = xc.regridder.grid.create_grid(lat=LAT, lon=LON)
 lat_axis = xc.create_axis("lat", LAT)
 lon_axis = xc.create_axis("lon", LON)
 output_grid = xc.create_grid(x=lon_axis, y=lat_axis)
@@ -144,7 +143,7 @@ def get_CRK_data(filepath):
     print("get data")
     ctl, fut = get_model_data(filepath)
     print("get LW and SW kernel")
-    LWK, SWK = get_kernel_regrid(ctl)
+    CRKs = get_kernel_regrid(ctl)
 
     # global mean and annual average delta tas
     avgdtas0 = fut["tas"] - ctl["tas"]
@@ -152,23 +151,16 @@ def get_CRK_data(filepath):
     avgdtas0 = avgdtas0.spatial.average("data", axis=["X", "Y"])["data"]
     dTs = avgdtas0.mean()
 
-    return (
-        ctl.clisccp,
-        fut.clisccp,
-        LWK,
-        SWK,
-        dTs,
-    )
+    return (ctl.clisccp,fut.clisccp,CRKs,dTs)
 
 
 ###########################################################################
 def get_kernel_regrid(ctl):
     # Read in data and map kernels to lat/lon
-
     
     f = xc.open_mfdataset(datadir + "cloud_kernels2.nc", decode_times=False)
     f = f.rename({"mo": "time", "tau_midpt": "tau", "p_midpt": "plev"})
-    f["time"] = ctl["time"].copy()
+    # f["time"] = ctl["time"].copy() 
     f["tau"] = np.arange(7)
     f["plev"] = np.arange(7)  # set tau,plev to consistent field
     LWkernel = f["LWkernel"].isel(albcs=0).squeeze()  # two kernels file are different
@@ -179,9 +171,7 @@ def get_kernel_regrid(ctl):
     ctl_albcs = ctl.rsuscs / ctl.rsdscs  # (12, 90, 144)
     ctl_albcs = ctl_albcs.fillna(0.0)
     ctl_albcs = ctl_albcs.where(~np.isinf(ctl_albcs), 0.0)
-    ctl_albcs = xr.where(
-        ctl_albcs > 1.0, 1, ctl_albcs
-    )  # where(condition, x, y) is x where condition is true, y otherwise
+    ctl_albcs = xr.where(ctl_albcs > 1.0, 1, ctl_albcs)  # where(condition, x, y) is x where condition is true, y otherwise
     ctl_albcs = xr.where(ctl_albcs < 0.0, 0, ctl_albcs)
 
     # LW kernel does not depend on albcs, just repeat the final dimension over longitudes:
@@ -190,7 +180,19 @@ def get_kernel_regrid(ctl):
     # Use control albcs to map SW kernel to appropriate longitudes
     SWK = map_SWkern_to_lon(SWkernel, LWK, ctl_albcs)
 
-    return LWK, SWK
+    # need to reshape and re-assign the times to match clisccp, in case clisccp.time is length n*12:
+    mimic = ctl['clisccp']
+    repyrs=int(len(mimic.time)/12)
+    repLWK = np.tile(LWK.values, (repyrs, 1,1,1,1))
+    repSWK = np.tile(SWK.values, (repyrs, 1,1,1,1))
+    CRKs = xr.Dataset({
+        'LWkernel':(('time','tau','plev','lat','lon'),repLWK),
+        'SWkernel':(('time','tau','plev','lat','lon'),repSWK)
+        },
+        coords={'time': mimic.time,'tau': mimic.tau,'plev': mimic.plev,'lat': mimic.lat,'lon': mimic.lon})    
+    CRKs = CRKs.bounds.add_missing_bounds()
+
+    return CRKs
 
 
 ###########################################################################
@@ -203,7 +205,8 @@ def map_SWkern_to_lon(SWkernel, LWK, albcsmap):
     # Ksw is size 12,7,7,lats,3
     # albcsmap is size 12,lats,lons
     albcs = np.arange(0.0, 1.5, 0.5)
-    SWkernel_map = LWK.copy(data=nanarray(LWK.shape))
+    nanarray = np.nan * np.ones(LWK.shape)
+    SWkernel_map = LWK.copy(data=nanarray)
 
     for T in range(len(LWK.time)):
         for LAT in range(len(LWK.lat)):
@@ -218,16 +221,6 @@ def map_SWkern_to_lon(SWkernel, LWK, albcsmap):
                 continue
 
     return SWkernel_map
-
-
-###########################################################################
-def nanarray(vector):
-    # this generates a masked array with the size given by vector
-    # example: vector = (90,144,28)
-    # similar to this=NaN*ones(x,y,z) in matlab
-    # used in "map_SWkern_to_lon"
-    this = np.nan * np.ones(vector)
-    return this
 
 
 ###########################################################################
@@ -302,37 +295,6 @@ def KT_decomposition_general(c1, c2, Klw, Ksw):
     output["SWcld_err"] = dRsw_resid.transpose("time", "lat", "lon")
     output["NETcld_err"] = output["LWcld_err"]+output["SWcld_err"]
     
-#     DS = xr.Dataset({
-#         'LWcld_tot':(('time','lat','lon'), output["LWcld_tot"].data, {"units": "W/m2/K"}),
-#         'LWcld_amt':(('time','lat','lon'), output["LWcld_amt"].data, {"units": "W/m2/K"}),
-#         'LWcld_alt':(('time','lat','lon'), output["LWcld_alt"].data, {"units": "W/m2/K"}),
-#         'LWcld_tau':(('time','lat','lon'), output["LWcld_tau"].data, {"units": "W/m2/K"}),
-#         'LWcld_err':(('time','lat','lon'), output["LWcld_err"].data, {"units": "W/m2/K"}),
-        
-#         'SWcld_tot':(('time','lat','lon'), output["SWcld_tot"].data, {"units": "W/m2/K"}),
-#         'SWcld_amt':(('time','lat','lon'), output["SWcld_amt"].data, {"units": "W/m2/K"}),
-#         'SWcld_alt':(('time','lat','lon'), output["SWcld_alt"].data, {"units": "W/m2/K"}),
-#         'SWcld_tau':(('time','lat','lon'), output["SWcld_tau"].data, {"units": "W/m2/K"}),
-#         'SWcld_err':(('time','lat','lon'), output["SWcld_err"].data, {"units": "W/m2/K"}),
-        
-#         'NETcld_tot':(('time','lat','lon'), output["NETcld_tot"].data, {"units": "W/m2/K"}),
-#         'NETcld_amt':(('time','lat','lon'), output["NETcld_amt"].data, {"units": "W/m2/K"}),
-#         'NETcld_alt':(('time','lat','lon'), output["NETcld_alt"].data, {"units": "W/m2/K"}),
-#         'NETcld_tau':(('time','lat','lon'), output["NETcld_tau"].data, {"units": "W/m2/K"}),
-#         'NETcld_err':(('time','lat','lon'), output["NETcld_err"].data, {"units": "W/m2/K"})
-#     },
-#         coords={
-#             'time': np.arange(12), 
-#             'lat': LAT.squeeze(), 
-#             'lon': LON.squeeze()
-#         }
-#     ) 
-#     DS.time.attrs['axis'] = 'T'
-#     DS.lon.attrs['axis'] = 'X'
-#     DS.lat.attrs['axis'] = 'Y'
-#     DS2 = DS.bounds.add_missing_bounds()
-
-#     return DS2
     return output
 
 
@@ -368,7 +330,6 @@ def obscuration_terms3(c1, c2):
     # c is in percent
 
     # SPLICE c1 and c2:
-    # MAKE SURE c1 and c2 are the same size!!!
     if c1.shape != c2.shape:
         raise RuntimeError("c1 and c2 are NOT the same size!!!")
 
@@ -377,9 +338,7 @@ def obscuration_terms3(c1, c2):
 
     midpt = len(c1)
 
-    U12 = (c12[:, :, 2:, :]).sum(
-        dim=["tau", "plev"]
-    ) / 100.0  # [time, lat, lon]
+    U12 = (c12[:, :, 2:, :]).sum(dim=["tau", "plev"]) / 100.0  # [time, lat, lon]
 
     L12 = c12[:, :, :2, :] / 100.0
 
@@ -410,10 +369,6 @@ def obscuration_terms3(c1, c2):
     rep_L_R_bar = tile_uneven(L_R_bar, L_R12)
     rep_F_bar = tile_uneven(F_bar, F12b)
 
-    # Cannot have negative cloud fractions:
-    L_R_bar = L_R_bar.where(L_R_bar >= 0, 0.0)
-    F_bar = F_bar.where(F_bar >= 0, 0.0)
-
     dobsc = rep_L_R_bar * F_prime
     dunobsc = L_R_prime * rep_F_bar
     prime_prime = L_R_prime * F_prime
@@ -441,9 +396,7 @@ def obscuration_terms3(c1, c2):
 
 
 ###########################################################################
-def obscuration_feedback_terms_general(
-    L_R_bar0, dobsc_fbk, dunobsc_fbk, dobsc_cov_fbk, Klw, Ksw
-):
+def obscuration_feedback_terms_general(L_R_bar0, dobsc_fbk, dunobsc_fbk, dobsc_cov_fbk, Klw, Ksw):
     """
     Estimate unobscured low cloud feedback,
     the low cloud feedback arising solely from changes in obscuration by upper-level clouds,
@@ -513,7 +466,6 @@ def monthly_anomalies(idata):
     """
     idata["time"].encoding["calendar"] = "noleap"
     idata = xc_to_dataset(idata)
-    # idata["time"].encoding["calendar"] = "noleap"
     clim = idata.temporal.climatology("data", freq="month", weighted=True)
     anom = idata.temporal.departures("data", freq="month", weighted=True)
 
@@ -525,9 +477,7 @@ def tile_uneven(data, data_to_match):
     """extend data to match size of data_to_match even if not a multiple of 12"""
 
     A12 = len(data_to_match) // 12
-    ind = np.arange(
-        12,
-    )
+    ind = np.arange(12,)
     rep_ind = np.tile(ind, (A12 + 1))[
         : int(len(data_to_match))
     ]  # int() added for python3
@@ -539,13 +489,8 @@ def tile_uneven(data, data_to_match):
 
 ###########################################################################
 def CloudRadKernel(filepath,rapidAdj = False):
-    (
-        ctl_clisccp,
-        fut_clisccp,
-        LWK,
-        SWK,
-        dTs
-    ) = get_CRK_data(filepath)
+    
+    (ctl_clisccp,fut_clisccp,CRKs,dTs) = get_CRK_data(filepath)
 
     if rapidAdj: # if doing rapid adjustments instead of feedbacks, do not normalize by ∆T
         dTs = 1
@@ -566,8 +511,8 @@ def CloudRadKernel(filepath,rapidAdj = False):
 
         C1 = clisccp_base[:, :, PP, :]
         C2 = C1 + clisccp_fbk[:, :, PP, :]
-        Klw = LWK[:, :, PP, :]
-        Ksw = SWK[:, :, PP, :]
+        Klw = CRKs['LWkernel'][:, :, PP, :]
+        Ksw = CRKs['SWkernel'][:, :, PP, :]
 
         output[sec] = KT_decomposition_general(C1, C2, Klw, Ksw)
 
@@ -577,12 +522,9 @@ def CloudRadKernel(filepath,rapidAdj = False):
     print("Get Obscuration Terms")
     sec = "LO680"  # this should already be true, but just in case...
     PP = sec_dic[sec]
+    Klw = CRKs['LWkernel'][:, :, PP, :]
+    Ksw = CRKs['SWkernel'][:, :, PP, :]
     obsc_output = {}
-    obsc_output[sec] = do_obscuration_calcs(
-        ctl_clisccp, fut_clisccp, LWK[:, :, PP, :], SWK[:, :, PP, :], dTs
-    )
-
+    obsc_output[sec] = do_obscuration_calcs(ctl_clisccp, fut_clisccp, Klw, Ksw, dTs)
+       
     return (output,obsc_output)
-    
-    # # for Mark's local purposes:
-    # return (output,obsc_output,clisccp_fbk, clisccp_base) 
