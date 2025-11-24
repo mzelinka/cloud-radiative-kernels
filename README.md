@@ -7,23 +7,25 @@ Cloud radiative kernels are provided, along with a Jupyter notebook that demonst
 References
 ----------
 Zelinka, M. D., S. A. Klein, and D. L. Hartmann, 2012: Computing and Partitioning Cloud Feedbacks Using 
-    Cloud Property Histograms. Part I: Cloud Radiative Kernels. J. Climate, 25, 3715-3735. 
+    Cloud Property Histograms. Part I: Cloud Radiative Kernels. _J. Climate_, 25, 3715-3735. 
     [doi:10.1175/JCLI-D-11-00248.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-11-00248.1).
 
 Zelinka, M. D., S. A. Klein, and D. L. Hartmann, 2012: Computing and Partitioning Cloud Feedbacks Using 
     Cloud Property Histograms. Part II: Attribution to Changes in Cloud Amount, Altitude, and Optical Depth. 
-    J. Climate, 25, 3736-3754. [doi:10.1175/JCLI-D-11-00249.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-11-00249.1).
+    _J. Climate_, 25, 3736-3754. [doi:10.1175/JCLI-D-11-00249.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-11-00249.1).
 
 Zelinka, M.D., S.A. Klein, K.E. Taylor, T. Andrews, M.J. Webb, J.M. Gregory, and P.M. Forster, 2013: 
     Contributions of Different Cloud Types to Feedbacks and Rapid Adjustments in CMIP5. 
-    J. Climate, 26, 5007-5027. [doi:10.1175/JCLI-D-12-00555.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-12-00555.1).
-    
-Zelinka, M. D., C. Zhou, and S. A. Klein, 2016: Insights from a Refined Decomposition of Cloud Feedbacks, 
-    Geophys. Res. Lett., 43, 9259-9269, [doi:10.1002/2016GL069917](http://onlinelibrary.wiley.com/doi/10.1002/2016GL069917/full).
+    _J. Climate_, 26, 5007-5027. [doi:10.1175/JCLI-D-12-00555.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-12-00555.1).
     
 Zhou, C., M. D. Zelinka, A. E. Dessler, P. Yang, 2013: An analysis of the short-term cloud feedback using 
-    MODIS data, J. Climate, 26, 4803–4815. [doi:10.1175/JCLI-D-12-00547.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-12-00547.1).
+    MODIS data, _J. Climate_, 26, 4803–4815. [doi:10.1175/JCLI-D-12-00547.1](http://journals.ametsoc.org/doi/abs/10.1175/JCLI-D-12-00547.1).
 
+Zelinka, M. D., C. Zhou, and S. A. Klein, 2016: Insights from a Refined Decomposition of Cloud Feedbacks, 
+    _Geophys. Res. Lett._, 43, 9259-9269, [doi:10.1002/2016GL069917](http://onlinelibrary.wiley.com/doi/10.1002/2016GL069917/full).
+    
+Zelinka, M. D., L.-W. Chao, T. A. Myers, Y. Qin, and S. A. Klein, 2025: Technical note: Recommendations for diagnosing cloud feedbacks and rapid cloud adjustments using cloud radiative kernels, 
+    _Atmos. Chem. Phys._, 25, 1477-1495, [doi:10.5194/acp-25-1477-2025](https://acp.copernicus.org/articles/25/1477/2025/).
 
 Input
 ----------
@@ -43,4 +45,4 @@ Two sets of cloud radiative kernels available at https://github.com/mzelinka/clo
 
 1) cloud_kernels2.nc: The cloud radiative kernels developed using zonal mean temperature and humidity profiles averaged across control runs of six CFMIP1 climate models as input to the radiation code. These are best for diagnosing feedbacks relative to a modeled pre-industrial climate state. Please refer to Zelinka et al. (2012a,b) for details.
 
-2) obs_cloud_kernels3.nc: The cloud radiative kernels developed using zonal mean temperature, humidity, and ozone profiles from ERA Interim over the period 2000-2010 as input to the radiation code. These are best for diagnosing feedbacks relative to an observed present-day climate state. Please refer to Zhou et al. (2013) for details.
+2) obs_cloud_kernels4.nc: The cloud radiative kernels developed using zonal mean temperature, humidity, and ozone profiles from ERA Interim over the period 2000-2010 as input to the radiation code. These are best for diagnosing feedbacks relative to an observed present-day climate state. Please refer to Zhou et al. (2013) for details.
